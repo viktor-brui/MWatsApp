@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "480027395183",
+    "firebase_url": "https://mwatsapp-c9cd9.firebaseio.com",
+    "project_id": "mwatsapp-c9cd9",
+    "storage_bucket": "mwatsapp-c9cd9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480027395183:android:7718f4fcc35ed1c774799a",
+        "android_client_info": {
+          "package_name": "com.example.mwatsapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "480027395183-7p55kid30uf87un7v9rgiocbp6l5jfll.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mwatsapp",
+            "certificate_hash": "ee3a6870f8d557dc1a473ed2024016628ce96b8c"
+          }
+        },
+        {
+          "client_id": "480027395183-7pr3takpufdgob4dnc6bmcuteud8ilka.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0qQhbMyhABGhoCSjDO4pf21P66gMmiTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "480027395183-7pr3takpufdgob4dnc6bmcuteud8ilka.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
