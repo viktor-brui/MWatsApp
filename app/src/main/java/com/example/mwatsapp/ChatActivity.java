@@ -15,9 +15,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import com.example.mwatsapp.chat.ChatObject;
 import com.example.mwatsapp.chat.MediaAdapetr;
 import com.example.mwatsapp.chat.MessageAdapter;
 import com.example.mwatsapp.chat.MessageObject;
+import com.example.mwatsapp.user.UserObject;
+import com.example.mwatsapp.util.SendNotification;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -39,17 +42,20 @@ public class ChatActivity extends AppCompatActivity {
     private RecyclerView.Adapter mChatAdapter, mMediaAdapter;
     private RecyclerView.LayoutManager mChatLayoutManager, mMediaLayoutManager;
     ArrayList<MessageObject> messageList;
-    String chatID;
-    DatabaseReference mChatDb;
+    ChatObject mChatObject;
+    DatabaseReference mChatMessagesDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        mChatDb = FirebaseDatabase.getInstance().getReference().child("chat").child(chatID);
+        mChatMessagesDb = FirebaseDatabase.getInstance().getReference().child("chat").child(mChatObject.getChatId()).child("messages");
 
-        chatID = getIntent().getExtras().getString("ChatID");
+        mChatObject = (ChatObject) getIntent().getSerializableExtra("chatObject");
+
+
+//        chatID = getIntent().getExtras().getString("ChatID");
         Button mSend = findViewById(R.id.send);
         Button mAddMedia = findViewById(R.id.addMedia);
 
@@ -73,7 +79,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void getChatMessages() {
-        mChatDb.addChildEventListener(new ChildEventListener() {
+        mChatMessagesDb.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if (dataSnapshot.exists()) {
@@ -89,7 +95,7 @@ public class ChatActivity extends AppCompatActivity {
                             mediaUrlList.add(mediaSnapshot.getValue().toString());
 
 
-                        MessageObject mMessage = new MessageObject(dataSnapshot.getKey(), creatorID, text, mediaUrlList);
+                    MessageObject mMessage = new MessageObject(dataSnapshot.getKey(), creatorID, text, mediaUrlList);
                     messageList.add(mMessage);
                     mChatLayoutManager.scrollToPosition(messageList.size() - 1);
                     mChatAdapter.notifyDataSetChanged();
@@ -128,8 +134,8 @@ public class ChatActivity extends AppCompatActivity {
 //        mMessage = findViewById(R.id.messageInput);
 
 
-            String messageId = mChatDb.push().getKey();
-        final DatabaseReference newMessageDb = mChatDb.child(messageId);
+        String messageId = mChatMessagesDb.push().getKey();
+        final DatabaseReference newMessageDb = mChatMessagesDb.child(messageId);
 
         final Map newMessageMap = new HashMap<>();
 
@@ -143,7 +149,7 @@ public class ChatActivity extends AppCompatActivity {
             for (String mediaUri : mediaUriList) {
                 String mediaId = newMessageDb.child("media").push().getKey();
                 mediaIdList.add(mediaId);
-                final StorageReference filePath = FirebaseStorage.getInstance().getReference().child("chat").child(chatID).child(messageId).child(mediaId);
+                final StorageReference filePath = FirebaseStorage.getInstance().getReference().child("chat").child(mChatObject.getChatId()).child(messageId).child(mediaId);
 
                 UploadTask uploadTask = filePath.putFile(Uri.parse(mediaUri));
                 uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -170,14 +176,30 @@ public class ChatActivity extends AppCompatActivity {
         }
 
 //        mMessage.setText(null);
-}
+    }
 
-    private void updateDatabaseWithNewMessage(DatabaseReference newMessageDb, Map newMessageMap){
+
+
+    private void updateDatabaseWithNewMessage(DatabaseReference newMessageDb, Map newMessageMap) {
         newMessageDb.updateChildren(newMessageMap);
         mMessage.setText(null);
         mediaUriList.clear();
         mediaIdList.clear();
         mMediaAdapter.notifyDataSetChanged();
+
+        String message;
+
+        if (newMessageMap.get("text") != null)
+            message = newMessageMap.get("text").toString();
+        else message = "Sent Media";
+
+
+
+        for (UserObject mUser : mChatObject.getUserObjectArrayList()){
+            if (!mUser.getUid().equals(FirebaseAuth.getInstance().getUid())){
+                new SendNotification(message, "New Message", mUser.getNotificationKey());
+            }
+        }
     }
 
     @SuppressLint("WrongConstant")
@@ -203,7 +225,7 @@ public class ChatActivity extends AppCompatActivity {
         mMedia = findViewById(R.id.mediaList);
         mMedia.setNestedScrollingEnabled(false);
         mMedia.setHasFixedSize(false);
-           // вместо RecyclerView.VERTICAL -> LinearLayout.VERTICAL  #3 8-10
+        // вместо RecyclerView.VERTICAL -> LinearLayout.VERTICAL  #3 8-10
         mMediaLayoutManager = new LinearLayoutManager(getApplicationContext(), LinearLayout.HORIZONTAL, false);
         mMedia.setLayoutManager(mMediaLayoutManager);
         mMediaAdapter = new MediaAdapetr(getApplicationContext(), mediaUriList);
@@ -213,20 +235,20 @@ public class ChatActivity extends AppCompatActivity {
     private void openGallery() {
         Intent intent = new Intent();
         intent.setType("image/*");
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.setAction(intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select picture(s)"), PIC_IMAGE_INTENT );
+        startActivityForResult(Intent.createChooser(intent, "Select picture(s)"), PIC_IMAGE_INTENT);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK){
-            if (requestCode == PIC_IMAGE_INTENT){
+        if (resultCode == RESULT_OK) {
+            if (requestCode == PIC_IMAGE_INTENT) {
                 if (data.getClipData() == null) {
                     mediaUriList.add(data.getData().toString());
-                }else {
-                    for (int i = 0; i < data.getClipData().getItemCount(); i++){
+                } else {
+                    for (int i = 0; i < data.getClipData().getItemCount(); i++) {
                         mediaUriList.add(data.getClipData().getItemAt(i).getUri().toString());
                     }
                 }
