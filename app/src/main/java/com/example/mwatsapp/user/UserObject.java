@@ -7,6 +7,8 @@ public class UserObject implements Serializable {
     private String name;
     private String phone;
     private String notificationKey;
+    private Boolean selected = false;
+
 
     public UserObject(String uid) {
         this.uid = uid;
@@ -36,6 +38,13 @@ public class UserObject implements Serializable {
 
     public String getNotificationKey() {
         return notificationKey;
+    }
+    public Boolean getSelected() {
+        return selected;
+    }
+
+    public void setSelected(Boolean selected) {
+        this.selected = selected;
     }
 
     public void setNotificationKey(String notificationKey) {
